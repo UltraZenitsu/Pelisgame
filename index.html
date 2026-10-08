@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="Juego de películas para jugar en equipos. Adiviná películas, competí por puntos y llegá primero al objetivo.">
+<meta name="theme-color" content="#14141a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Películas">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Juego de Películas</title>
+<style>
+@font-face{font-family:'Lilita One';font-weight:400;font-style:normal;font-display:swap;src:url(fonts/lilita-one-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:Nunito;font-weight:700;font-style:normal;font-display:swap;src:url(fonts/nunito-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:Nunito;font-weight:900;font-style:normal;font-display:swap;src:url(fonts/nunito-latin-900-normal.woff2) format('woff2')}
+:root{--bg:#14141a;--red:#ef3b4d;--blue:#2d7dff;--g:#3ddc84;--y:#ffc233;--ink:#f5f3ee;--mut:#a7a8b8;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{background:var(--bg);scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));color:var(--ink);font:800 17px/1.35 Nunito,system-ui,sans-serif;--a1:.15;--a2:.15;background:linear-gradient(90deg,rgba(239,59,77,var(--a1)) 50%,rgba(45,125,255,var(--a2)) 50%),var(--bg);-webkit-user-select:none;user-select:none}
+body[data-team=red]{--a1:.38;--a2:.06}
+body[data-team=blue]{--a1:.06;--a2:.38}
+h1,h2,h3{margin:0;font-family:'Lilita One',Impact,sans-serif;font-weight:400;letter-spacing:.02em}
+h1{font-size:clamp(34px,9vw,60px);line-height:1.05;text-align:center;text-shadow:0 4px 0 rgba(0,0,0,.35)}
+button,input{font:inherit;color:inherit;touch-action:manipulation}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2px}
+button:disabled{opacity:.4;cursor:not-allowed}
+.wrap,.game{max-width:900px;margin:0 auto;padding:10px 16px 36px}
+.game{max-width:560px;display:flex;flex-direction:column;gap:12px;min-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+.t-red{--tc:var(--red)}.t-blue{--tc:var(--blue)}
+.top{display:flex;justify-content:flex-end}
+.pl{min-height:46px;padding:8px 16px;border-radius:99px;border:2px solid #3a3a48;background:rgba(0,0,0,.4)}
+.sub{text-align:center;font-size:19px;color:var(--mut);margin:8px 0 22px}
+.teams{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+@media(max-width:640px){.teams{grid-template-columns:1fr}}
+.panel{border-radius:22px;padding:18px;border:3px solid var(--tc);background:color-mix(in srgb,var(--tc) 14%,#16161c);display:flex;flex-direction:column;gap:12px}
+.panel h2{font-size:28px}
+input{width:100%;min-height:52px;padding:12px 14px;border-radius:14px;border:2px solid #3a3a48;background:#0e0e13;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chips em{color:var(--mut);font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 6px 6px 14px;border-radius:99px;background:var(--tc);color:#fff;animation:pop .3s}
+.chip.s{padding:6px 14px}
+.chip button{width:32px;height:32px;border:0;border-radius:50%;background:rgba(0,0,0,.28)}
+.cfg{background:rgba(0,0,0,.32);border-radius:22px;padding:16px;margin:16px 0;display:flex;flex-direction:column;gap:10px}
+.cfg h3{font-size:22px}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{flex:1;min-width:64px;min-height:52px;border-radius:14px;border:2px solid #3a3a48;background:#1d1d27}
+.seg .on{background:var(--y);color:#2a1f00;border-color:var(--y)}
+.step{display:flex;align-items:center;gap:16px}
+.step b{font:400 40px 'Lilita One',Impact,sans-serif;min-width:56px;text-align:center}
+.step button{width:56px;height:56px;font-size:28px;border-radius:16px;border:2px solid #3a3a48;background:#1d1d27}
+.btn{font-family:'Lilita One',Impact,sans-serif;font-weight:400;font-size:21px;min-height:62px;padding:14px 20px;border:0;border-radius:18px;color:#fff;box-shadow:0 6px 0 rgba(0,0,0,.4);transition:transform .08s,box-shadow .08s}
+.btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.4)}
+.big{width:100%;font-size:26px;min-height:72px}
+.rd{background:var(--red)}.bl{background:var(--blue)}.go{background:#1fb866}.no{background:#454a5c}.gold{background:var(--y);color:#2a1f00}
+.hint{text-align:center;color:var(--mut)}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:20px}
+.list li::before{content:"🎭 "}
+.q{font:400 34px 'Lilita One',Impact,sans-serif;text-align:center;margin:22px 0 14px}
+.row{display:grid;gap:12px}
+.board{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.sb{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-radius:18px;background:rgba(0,0,0,.35);border:3px solid transparent;opacity:.6;transition:.25s}
+.sb.on{opacity:1;border-color:var(--tc);background:color-mix(in srgb,var(--tc) 35%,#111);transform:scale(1.03);box-shadow:0 0 24px color-mix(in srgb,var(--tc) 60%,transparent)}
+.sb span{font-size:18px}
+.sb b{font:400 clamp(34px,10vw,52px)/1 'Lilita One',Impact,sans-serif}
+.sb.bump b{animation:pop .6s}
+.goal{margin:0;text-align:center;color:var(--mut);font-size:15px}
+.turn{margin:auto 0;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}
+.turn .badge{font-size:72px}
+.name{font:400 clamp(44px,13vw,80px)/1 'Lilita One',Impact,sans-serif;background:var(--tc);padding:8px 26px;border-radius:20px;box-shadow:0 8px 0 rgba(0,0,0,.35);overflow-wrap:anywhere}
+.note{background:rgba(0,0,0,.4);padding:6px 14px;border-radius:12px;margin:0}
+.who2{text-align:center;font-size:19px}
+.clock{font:400 clamp(80px,26vw,150px)/1 'Lilita One',Impact,sans-serif;text-align:center;font-variant-numeric:tabular-nums;color:var(--g);text-shadow:0 5px 0 rgba(0,0,0,.4)}
+.bar{height:12px;border-radius:9px;background:rgba(0,0,0,.45);overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:var(--g);transition:width .12s linear,background .3s}
+[data-z=y] .clock{color:var(--y)}[data-z=y] .bar i{background:var(--y)}
+[data-z=r] .clock{color:#ff4d5e;animation:tense .5s infinite alternate}[data-z=r] .bar i{background:#ff4d5e}
+.card{background:#fffdf5;color:#1b1b24;border-radius:20px;padding:36px 16px 30px;min-height:200px;margin:6px 8px;display:flex;flex-direction:column;justify-content:center;text-align:center;position:relative;box-shadow:0 0 0 6px var(--tc),0 20px 40px rgba(0,0,0,.55)}
+.card::before,.card::after{content:"";position:absolute;left:14px;right:14px;height:8px;border-radius:3px;background:repeating-linear-gradient(90deg,#1b1b24 0 14px,transparent 14px 26px);opacity:.85}
+.card::before{top:10px}.card::after{bottom:10px}
+.card .ic{font-size:40px}
+.card h2{font-size:clamp(34px,11vw,60px);line-height:1.05;text-transform:uppercase;overflow-wrap:anywhere}
+.flip{animation:flip .35s ease-out}
+.acts{display:grid;grid-template-columns:1.35fr 1fr;gap:12px;margin-top:auto}
+.acts .btn{min-height:84px}
+.res{margin:auto 0;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center}
+.res .e{font-size:96px;line-height:1}
+.res p{margin:0;font-size:22px}
+.res .plus{font:400 44px 'Lilita One',Impact,sans-serif;color:var(--tc)}
+.res.ok{animation:pop .5s}
+.win{align-items:center;text-align:center}
+.win .e{font-size:84px;line-height:1;animation:pop .8s}
+.win .pts{font:400 46px 'Lilita One',Impact,sans-serif;margin:0}
+.win .board,.win .goal{width:100%}
+.cf{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+@keyframes flip{from{transform:rotateX(80deg) scale(.9);opacity:.2}to{transform:none;opacity:1}}
+@keyframes tense{to{transform:scale(1.08)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ===== v2 ===== */
+.top{justify-content:space-between;align-items:center}
+.dot{display:inline-block;width:.75em;height:.75em;border-radius:50%;background:var(--tc);box-shadow:0 0 0 2px rgba(255,255,255,.55);vertical-align:-.05em;margin-right:.35em}
+.tm{background:var(--tc);color:var(--tx,#fff)}
+.chip{color:var(--tx,#fff)}
+.name{color:var(--tx,#fff)}
+.nmi{font:400 26px 'Lilita One',Impact,sans-serif;letter-spacing:.02em;border-color:var(--tc);margin:0}
+.cr{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+input[type=color]{width:56px;height:52px;min-height:52px;padding:3px;margin:0;border-radius:14px;cursor:pointer;flex:none}
+.sws{display:flex;gap:8px;flex-wrap:wrap}
+.sw{width:38px;height:38px;border-radius:50%;border:3px solid transparent;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.sw.on{border-color:#fff}
+.board.n3{grid-template-columns:repeat(3,1fr)}
+.board.n4{grid-template-columns:repeat(4,1fr);gap:6px}
+.board.n3 .sb,.board.n4 .sb{flex-direction:column;gap:0;padding:8px 6px;text-align:center}
+.board.n3 .sb span,.board.n4 .sb span{font-size:13px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel{font-size:clamp(22px,6vw,30px);text-align:center}
+.wc{margin:6px 0 0;font-size:18px;color:#6b6b7a}
+.warn{color:#ff9a9a;text-align:center;margin:0}
+.acts.rv{grid-template-columns:1fr 1.35fr}
+.acts.col{grid-template-columns:1fr}
+.card.hid{background:#2a2a36;color:#9a9aae}
+.card h2.hd{font-size:clamp(24px,8vw,38px)}
+.cb{display:flex;flex-direction:column;gap:10px}
+.rev{align-self:center;min-width:190px}
+.clock.sm{font-size:clamp(56px,18vw,96px);animation:none}
+.tup{font-size:clamp(28px,8vw,44px);color:#ff4d5e;animation:tense .6s infinite alternate}
+.bad{background:#c0344a}
+.gm{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.gm{grid-template-columns:1fr}}
+.gc{display:flex;align-items:center;gap:16px;text-align:left;width:100%;padding:18px;border-radius:22px;border:3px solid #3a3a48;background:#1b1b26}
+.gc.on{grid-column:1/-1;border-color:var(--y);background:color-mix(in srgb,var(--y) 14%,#1b1b26);box-shadow:0 8px 0 rgba(0,0,0,.35)}
+.gc:disabled{opacity:.55;cursor:not-allowed}
+.gc .ge{font-size:54px;line-height:1}
+.gc .gt{display:flex;flex-direction:column;gap:2px}
+.gn{font:400 28px 'Lilita One',Impact,sans-serif;letter-spacing:.02em}
+.gc em{font-style:normal;color:var(--mut)}
+.gc.on em{color:var(--y)}
+.mvp{width:100%;text-align:center;border-radius:22px;padding:16px;background:linear-gradient(135deg,#ffd75e,#ff9f1c);color:#2a1f00;box-shadow:0 10px 30px rgba(255,159,28,.35)}
+.mvp h2{font-size:clamp(36px,11vw,56px)}
+.mvp p{margin:0;font-size:20px}
+.rank{list-style:none;margin:0;padding:0;width:100%;display:flex;flex-direction:column;gap:8px;text-align:left}
+.rank li{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;background:rgba(0,0,0,.38);border-left:6px solid var(--tc)}
+.md{font-size:28px;min-width:38px;text-align:center}
+.rn{flex:1;display:flex;flex-direction:column;min-width:0}
+.rn small{color:var(--mut);font-size:14px}
+.rs{white-space:nowrap}
+
+/* ===== PWA ===== */
+html,body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+input{-webkit-user-select:text;user-select:text}
+.pwa{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+.pwa:empty{display:none}
+.inst{background:linear-gradient(135deg,#ffc233,#ff8a1f);color:#2a1f00}
+.okk{margin:0;text-align:center;color:var(--g);font:400 26px 'Lilita One',Impact,sans-serif}
+.how{background:rgba(0,0,0,.35);border-radius:18px;padding:14px 18px}
+.how ol{margin:6px 0 0;padding-left:22px}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:22px;color:var(--mut)}
+.about{text-align:center;background:rgba(0,0,0,.32);border-radius:22px;padding:24px 18px;margin-top:18px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.about h2{font-size:34px}
+.about p{margin:0}
+.ab-e{font-size:72px;line-height:1}
+.ver{color:var(--y);font-size:20px}
+.about .pwa{width:100%}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="version.js"></script>
+<script>
+const M=[...new Set(`El Rey León|Toy Story|Shrek|Buscando a Nemo|Frozen|Moana|Madagascar|Kung Fu Panda|Coco|Intensamente|Ratatouille|Up|Wall-E|Cars|Mulán|Aladdín|La Sirenita|La Bella y la Bestia|Pocahontas|Tarzán|Hércules|Enredados|Zootopia|Encanto|Los Increíbles|Monsters Inc|Bichos|Ice Age|Happy Feet|Río|Mi Villano Favorito|Minions|Bambi|Dumbo|Pinocho|Los Aristogatos|El Libro de la Selva|101 Dálmatas|Blancanieves|La Cenicienta|Peter Pan|Lilo y Stitch|Valiente|Soul|Luca|Los Croods|Hotel Transilvania|El Gato con Botas|Ralph el Demoledor|Garfield|Cómo Entrenar a tu Dragón|Spider-Man Un Nuevo Universo|Spider-Man|Los Vengadores|Iron Man|Batman|Superman|Thor|Capitán América|Pantera Negra|Hulk|Doctor Strange|Guardianes de la Galaxia|Ant-Man|Aquaman|Wonder Woman|Joker|Deadpool|Wolverine|X-Men|Los 4 Fantásticos|Flash|Shazam|Venom|Capitana Marvel|Liga de la Justicia|Escuadrón Suicida|La Máscara|Mi Pobre Angelito|Mrs. Doubtfire|Ace Ventura|¿Qué Pasó Ayer?|Loco por Mary|Mentiroso Mentiroso|Los Cazafantasmas|La Pantera Rosa|Johnny English|Mr. Bean|Zoolander|Click|Elf|Dos Tontos Muy Tontos|Escuela de Rock|Legalmente Rubia|Hombres de Negro|Space Jam|Matilda|El Grinch|Una Noche en el Museo|Mamma Mia|Chicas Pesadas|Todopoderoso|It|El Exorcista|Tiburón|Scream|Chucky|Annabelle|La Monja|Actividad Paranormal|El Aro|Psicosis|Halloween|Pesadilla en Elm Street|Viernes 13|Insidious|Drácula|Frankenstein|El Conjuro|Poltergeist|Juego Macabro|Déjame Salir|Coraline|El Resplandor|Pesadilla antes de Navidad|Rápidos y Furiosos|Misión Imposible|Duro de Matar|John Wick|James Bond|Rambo|Terminator|Matrix|Gladiador|Top Gun|Top Gun Maverick|Los Indestructibles|Búsqueda Implacable|Mad Max|Rocky|Jason Bourne|Kill Bill|Transformers|Bad Boys|Máxima Velocidad|Troya|300|Robocop|Depredador|Karate Kid|Titanic|Diario de una Pasión|Orgullo y Prejuicio|Mujer Bonita|Ghost|La La Land|Dirty Dancing|Notting Hill|Crepúsculo|Bajo la Misma Estrella|Posdata Te Amo|Cuando Harry Conoció a Sally|Love Actually|Grease|Moulin Rouge|Casablanca|Bridget Jones|Tres Metros Sobre el Cielo|Harry Potter|El Señor de los Anillos|El Hobbit|Las Crónicas de Narnia|Piratas del Caribe|Maléfica|El Mago de Oz|Willy Wonka|La Princesa Prometida|Percy Jackson|Los Juegos del Hambre|Animales Fantásticos|La Historia Sin Fin|Hook|El Laberinto del Fauno|Charlie y la Fábrica de Chocolate|Jumanji|Avatar|Star Wars|Volver al Futuro|Jurassic Park|Jurassic World|E.T.|Interestelar|El Origen|Alien|Gravedad|Perdido en Marte|Ready Player One|Yo Robot|Día de la Independencia|Star Trek|Godzilla|King Kong|Pacific Rim|Duna|Blade Runner|La Guerra de los Mundos|Armageddon|Forrest Gump|El Padrino|La Lista de Schindler|Náufrago|Cadena Perpetua|Rescatando al Soldado Ryan|Una Mente Brillante|El Club de la Pelea|Pulp Fiction|Bohemian Rhapsody|Whiplash|El Gran Showman|Cisne Negro|La Vida es Bella|El Lobo de Wall Street|Parásitos|Oppenheimer|Barbie|Indiana Jones|La Momia|Tomb Raider|Viaje al Centro de la Tierra|Los Goonies|Marley y Yo|Beethoven|Babe el Cerdito|Stuart Little|Paddington|Mary Poppins|La Novicia Rebelde|El Show de Truman|Liberen a Willy|Mini Espías|Pollito Little|Amigos Salvajes|El Jorobado de Notre Dame|Robin Hood|Los Pitufos|Sing|Ferdinand|Trolls|Lluvia de Hamburguesas|El Espanta Tiburones|Super Mario Bros|Sonic|Minecraft|Buscando a Dory|Elemental|Mi Amigo el Gigante|El Principito|Los Locos Addams|Los Padrinos Mágicos|Tom y Jerry|Alvin y las Ardillas|Los Pingüinos de Madagascar|Bob Esponja La Película|Scooby-Doo|Los Simpson|Lightyear|Pollitos en Fuga|Wallace y Gromit|La Novia Cadáver|El Expreso Polar|Pokémon|El Caballero de la Noche|El Increíble Hulk|El Hombre de Acero|Ted|Superbad|American Pie|Scary Movie|El Dictador|Borat|Atrápame si Puedes|El Profesor Chiflado|Free Guy|Mi Gran Boda Griega|Los Muppets|Los Pájaros|Anaconda|Destino Final|Un Lugar en Silencio|Cementerio de Animales|Los Niños del Maíz|Zombieland|Guerra Mundial Z|Resident Evil|La Casa de Cera|El Hombre Lobo|El Hombre Invisible|Los Mercenarios|Cara Cortada|El Transportador|El Equipo A|Los Ángeles de Charlie|Hancock|Mr. y Mrs. Smith|Arma Mortal|Braveheart|La Roca|Pearl Harbor|Furia de Titanes|Alien vs Depredador|Cincuenta Sombras de Grey|Un Amor para Recordar|Mi Primer Beso|Romeo y Julieta|El Gran Gatsby|El Fantasma de la Ópera|Los Miserables|Como si Fuera la Primera Vez|Creed|Hachiko|Maze Runner|Divergente|Ocean's Eleven|Elvis|El Último Samurái|Gremlins|Abracadabra|Flubber|Beetlejuice|Eduardo Manostijeras|El Quinto Elemento|Blancanieves y el Cazador|Lego La Película|Casper|El Rey Escorpión|Dolittle|Santa Claus`.split('|'))];
+const GAMES=[
+  {id:'peliculas',e:'🎬',n:'PELÍCULAS',d:'Adiviná la película con mímica.',on:1,items:M,sel:'ELEGÍ UNA PELÍCULA',hid:'PELÍCULA OCULTA',unit:'película',units:'películas'},
+  {id:'videojuegos',e:'🎮',n:'VIDEOJUEGOS',d:'Adiviná el videojuego.'},
+  {id:'canciones',e:'🎵',n:'CANCIONES',d:'Adiviná la canción.'},
+  {id:'series',e:'📺',n:'SERIES',d:'Adiviná la serie.'},
+  {id:'personajes',e:'🦸',n:'PERSONAJES',d:'Adiviná el personaje.'},
+  {id:'lugares',e:'🌎',n:'LUGARES',d:'Adiviná el lugar.'}
+];
+const DEF=[{nm:'Equipo Rojo',col:'#ef3b4d'},{nm:'Equipo Azul',col:'#2d7dff'},{nm:'Equipo Verde',col:'#1fb866'},{nm:'Equipo Amarillo',col:'#ffc233'}];
+const SW=[['Rojo','#ef3b4d'],['Azul','#2d7dff'],['Verde','#1fb866'],['Violeta','#a855f7'],['Amarillo','#ffc233'],['Naranja','#ff8a1f']];
+const KEYS=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+const PH=['menu','about','setup','confirm','intro','pick','play','over','result','win'];
+const MAXP=5,K='jdp_v2',$=s=>document.querySelector(s),app=$('#app');
+let S={phase:'menu',game:'peliculas',n:2,tm:DEF.map(d=>({...d})),p:[[],[],[],[]],draft:['','','',''],time:60,target:20,score:[0,0,0,0],team:0,ai:0,card:null,left:60000,endAt:0,passes:MAXP,show:false,deck:[],bag:[[],[],[],[]],lastA:[-1,-1,-1,-1],st:{},res:null,winner:null,sound:true};
+let iv=null,rt=null,AC=null,lastSec=-1;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=s=>String(s/60|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+const zone=s=>s>20?'g':s>9?'y':'r';
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const stopT=()=>{clearInterval(iv);iv=null};
+const G=()=>GAMES.find(g=>g.id===S.game)||GAMES[0];
+const IT=()=>G().items;
+const TL=()=>[...Array(S.n).keys()];
+const nm=i=>(S.tm[i].nm||'').trim()||DEF[i].nm;
+const NM=i=>esc(nm(i).toUpperCase());
+const ink=c=>{const h=parseInt(c.slice(1),16);return .299*(h>>16)+.587*(h>>8&255)+.114*(h&255)>150?'#1b1b24':'#fff'};
+const tv=i=>`--tc:${S.tm[i].col};--tx:${ink(S.tm[i].col)}`;
+const dot=()=>'<span class="dot"></span>';
+const words=t=>t.trim().split(/\s+/).length;
+const plur=(n,a,b)=>n+' '+(n===1?a:b);
+const stat=(t,i)=>S.st[t+':'+i]||(S.st[t+':'+i]={o:0,u:0,p:0,f:0});
+
+/* ---------- sonido (WebAudio, falla en silencio) ---------- */
+function beep(f,d=.12,type='sine',v=.15,t0=0){
+  if(!S.sound)return;
+  try{
+    AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended')AC.resume();
+    const o=AC.createOscillator(),g=AC.createGain(),s=AC.currentTime+t0;
+    o.type=type;o.frequency.value=f;
+    g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(.001,s+d);
+    o.connect(g);g.connect(AC.destination);o.start(s);o.stop(s+d);
+  }catch(e){}
+}
+const sfx={
+  start:()=>{beep(440,.1);beep(660,.18,'sine',.15,.1)},
+  ok:()=>[523,659,784,1047].forEach((f,i)=>beep(f,.16,'triangle',.18,i*.09)),
+  pass:()=>beep(220,.15,'sawtooth',.08),
+  tick:s=>beep(s<=3?1200:880,.06,'square',.06),
+  end:()=>{beep(300,.25,'sawtooth',.12);beep(160,.5,'sawtooth',.12,.25)},
+  win:()=>[523,659,784,1047,784,1047,1319].forEach((f,i)=>beep(f,.2,'triangle',.18,i*.12))
+};
+
+
+
+/* ---------- mazos justos ---------- */
+function draw(){
+  const n=IT().length;
+  S.deck=S.deck.filter(i=>i<n);
+  if(!S.deck.length){
+    S.deck=shuffle([...Array(n).keys()]);
+    const l=S.deck.length-1;
+    if(S.deck[l]===S.card)[S.deck[0],S.deck[l]]=[S.deck[l],S.deck[0]];
+  }
+  return S.deck.pop();
+}
+function nextActor(t){
+  const L=S.p[t];
+  let b=S.bag[t].filter(i=>i<L.length);
+  if(!b.length){
+    b=shuffle(L.map((_,i)=>i));
+    const l=b.length-1;
+    if(l>0&&b[l]===S.lastA[t])[b[0],b[l]]=[b[l],b[0]];
+  }
+  const a=b.pop();S.bag[t]=b;S.lastA[t]=a;return a;
+}
+
+/* ---------- ranking y reconocimientos ---------- */
+function awards(L){
+  const used=new Set(),mt=Math.max(...L.map(x=>x.u)),mp=Math.max(...L.map(x=>x.p));
+  return L.map((x,i)=>{
+    const r=x.u?x.o/x.u:0,c=[];
+    if(i===0)c.push('🏆 MEJOR ACTOR DEL PARTIDO');
+    if(!x.u)c.push('🪑 SE QUEDÓ EN EL BANCO');
+    else if(!x.o)c.push('🥔 SE ESFORZÓ... PERO NADIE ENTENDIÓ','🤡 MEJOR ACTUACIÓN DE COMEDIA','🌳 EL ÁRBOL DE LA OBRA');
+    else{
+      if(x.u>1&&r===1)c.push('🔥 MAESTRO DE LA MÍMICA');
+      if(x.o>=6)c.push('👑 LEYENDA DE LA ACTUACIÓN');
+      if(x.u===mt&&mt>2)c.push('😂 EL QUE NO PARÓ DE ACTUAR');
+      if(x.p===mp&&mp>2)c.push('🚀 ACTUACIÓN DE OTRO PLANETA');
+      if(x.o>=3)c.push('🎬 ESTRELLA DE HOLLYWOOD');
+      if(r>=.5)c.push('🎭 REVELACIÓN DEL OSCAR');
+      c.push('💀 ACTUÓ COMO SI LE PAGARAN','🎪 EL ALMA DE LA FIESTA','⭐ PROMESA DEL CINE','🦸 HÉROE DEL EQUIPO','🤌 ARTISTA INCOMPRENDIDO','🎬 ESTRELLA DE HOLLYWOOD','🎭 REVELACIÓN DEL OSCAR');
+    }
+    const t=c.find(z=>!used.has(z))||c[0];used.add(t);return t;
+  });
+}
+function ranking(){
+  const L=[];
+  TL().forEach(t=>S.p[t].forEach((n,i)=>L.push({n,tm:t,...stat(t,i)})));
+  L.sort((a,b)=>b.o-a.o||a.u-b.u||a.n.localeCompare(b.n));
+  const a=awards(L);
+  return L.map((x,i)=>({...x,a:a[i]}));
+}
+
+/* ---------- vistas ---------- */
+const sndTxt=()=>S.sound?'🔊 Sonido: ON':'🔇 Sonido: OFF';
+const snd=back=>`<div class="top">${back?'<button class="pl" data-a="menu">🎮 Juegos</button>':'<span></span>'}<button class="pl sndb" data-a="snd">${sndTxt()}</button></div>`;
+const chips=t=>S.p[t].map((n,i)=>`<span class="chip">${esc(n)}<button data-a="del" data-t="${t}" data-i="${i}" aria-label="Eliminar ${esc(n)}">✕</button></span>`).join('');
+function board(){
+  const act=S.phase==='result'?S.res.team:S.phase==='win'?S.winner:S.team;
+  const bump=S.phase==='result'&&S.res.type==='ok'?S.res.team:-1;
+  return `<div class="board n${S.n}">${TL().map(i=>`<div class="sb ${act===i?'on':''} ${bump===i?'bump':''}" style="${tv(i)}"><span>${dot()}${NM(i)}</span><b>${S.score[i]}</b></div>`).join('')}</div><p class="goal">Objetivo: ${S.target} puntos · Primero en llegar a ${S.target} gana 🏆</p>`;
+}
+const hdr=()=>snd()+board();
+const pc=()=>`🎟️ Pases: ${S.passes}/${MAXP}`;
+const pbtn=()=>`<button class="btn no" data-a="pass" ${S.passes?'':'disabled'}>❌ PASAR — ${S.passes}/${MAXP}</button>`;
+const nopass=()=>S.passes?'':'<p class="warn">🚫 Ya no quedan pases.</p>';
+const actor=()=>esc(S.p[S.team][S.ai]);
+const wcount=s=>`📝 ${plur(words(s),'palabra','palabras')}`;
+
+function vMenu(){
+  return `<main class="wrap">${snd()}<h1>🎮 ELEGÍ EL JUEGO</h1><p class="sub">Mismo tablero, distintas formas de adivinar.</p><div class="gm">${GAMES.map(g=>`<button class="gc ${g.on?'on':''}" ${g.on?`data-a="game" data-t="${g.id}"`:'disabled aria-disabled="true"'}><span class="ge">${g.e}</span><span class="gt"><b class="gn">${g.n}</b><span>${g.d}</span><em>${g.on?'▶️ Jugar':'🔒 Próximamente'}</em></span></button>`).join('')}</div><div class="pwa">${pwaHtml()}</div><div class="foot"><button class="pl" data-a="about">ℹ️ SOBRE EL JUEGO</button><span>v${VER}</span></div></main>`;
+}
+function vAbout(){
+  const l='📱 Instalar aplicación';
+  return `<main class="wrap">${snd(1)}<h1>ℹ️ SOBRE EL JUEGO</h1><section class="about"><div class="ab-e">🎬</div><h2>Juego de Películas</h2><p class="ver">Versión ${VER}</p><p>Juego de películas para jugar en equipos. Adiviná películas, competí por puntos y llegá primero al objetivo.</p><div class="pwa" data-l="${l}">${pwaHtml(l)}</div></section></main>`;
+}
+function vSetup(){
+  const g=G(),ok=TL().every(i=>S.p[i].length);
+  return `<main class="wrap">${snd(1)}<h1>${g.e} JUEGO DE ${g.n}</h1><p class="sub">Elige tus equipos y prepárate para adivinar.</p>
+  <section class="cfg"><h3>👥 ¿Cuántos equipos?</h3><div class="seg">${[2,3,4].map(v=>`<button data-a="n" data-v="${v}" class="${v===S.n?'on':''}">${v}</button>`).join('')}</div></section>
+  <div class="teams">${TL().map(i=>`<section class="panel" style="${tv(i)}">
+    <input class="nmi" data-nm="${i}" maxlength="18" autocomplete="off" aria-label="Nombre del equipo ${i+1}" placeholder="Nombre del equipo" value="${esc(S.tm[i].nm)}">
+    <div class="cr"><input type="color" data-col="${i}" value="${S.tm[i].col}" aria-label="Color del equipo ${i+1}"><div class="sws">${SW.map(([n,c])=>`<button class="sw ${S.tm[i].col===c?'on':''}" data-a="sw" data-t="${i}" data-v="${c}" style="background:${c}" aria-label="${n}"></button>`).join('')}</div></div>
+    <div><input id="in-${i}" data-t="${i}" maxlength="20" autocomplete="off" autocapitalize="words" placeholder="Nombre del jugador" value="${esc(S.draft[i])}"><button class="btn tm" style="width:100%" data-a="add" data-t="${i}">+ Agregar jugador</button></div>
+    <div class="chips">${chips(i)||'<em>Aún no hay jugadores</em>'}</div></section>`).join('')}</div>
+  <section class="cfg"><h3>⏱️ Tiempo por turno</h3><div class="seg">${[30,45,60,90,120].map(v=>`<button data-a="time" data-v="${v}" class="${v===S.time?'on':''}">${v} s</button>`).join('')}</div>
+  <h3>🏆 Puntos para ganar</h3><div class="step"><button data-a="pts" data-v="-1" aria-label="Menos puntos">−</button><b>${S.target}</b><button data-a="pts" data-v="1" aria-label="Más puntos">+</button></div>
+  <p style="margin:0">El primer equipo en llegar a <b>${S.target} puntos</b> gana.</p></section>
+  <button class="btn gold big" data-a="confirm" ${ok?'':'disabled'}>✅ CONFIRMAR EQUIPOS</button>${ok?'':'<p class="hint">Agrega al menos 1 jugador en cada equipo.</p>'}</main>`;
+}
+function vConfirm(){
+  return `<main class="wrap">${snd()}<h1>✅ Equipos confirmados</h1><div class="teams" style="margin-top:18px">${TL().map(i=>`<section class="panel" style="${tv(i)}"><h2>${dot()}${esc(nm(i))}</h2><ul class="list">${S.p[i].map(n=>`<li>${esc(n)}</li>`).join('')}</ul></section>`).join('')}</div>
+  <p class="q">¿Todo listo?</p><div class="row"><button class="btn no big" data-a="edit">✏️ Editar equipos</button><button class="btn go big" data-a="start">🎬 ¡LISTO, EMPEZAR!</button></div></main>`;
+}
+function vIntro(){
+  const t=S.team;
+  return `<main class="game" style="${tv(t)}">${hdr()}<section class="turn"><div class="badge">${dot()}</div><h1>TURNO ${NM(t)}</h1><p style="margin:0;font-size:22px">🎭 Actúa:</p><div class="name">${actor()}</div><p style="margin:0">Cuando estén listos, pulsa el botón. Solo quien actúa debe mirar la pantalla.</p></section><button class="btn tm big" data-a="pick">${G().e} ELEGIR ${G().unit.toUpperCase()}</button></main>`;
+}
+function vPick(){
+  const g=G(),s=IT()[S.card];
+  return `<main class="game" style="${tv(S.team)}">${hdr()}<h2 class="sel">${g.e} ${g.sel}</h2><div class="who2">${dot()}Actúa: <b>${actor()}</b> · ${pc()}</div>
+  <div class="card flip"><div class="ic">${g.e}</div><h2>${esc(s)}</h2><p class="wc">${wcount(s)}</p></div>
+  ${nopass()}<p class="hint" style="margin:0">⏱️ El tiempo (${S.time} s) empieza cuando pulses COMENZAR.</p>
+  <div class="acts rv">${pbtn()}<button class="btn go" data-a="go">▶️ COMENZAR</button></div></main>`;
+}
+function cardIn(){
+  const s=IT()[S.card],g=G();
+  return `<div class="card ${S.show?'':'hid'}"><div class="ic">${g.e}</div>${S.show?`<h2>${esc(s)}</h2><p class="wc">${wcount(s)}</p>`:`<h2 class="hd">${g.hid}</h2>`}</div><button class="pl rev" data-a="rev">${S.show?'🙈 OCULTAR':'👁️ REVELAR'}</button>`;
+}
+function vPlay(){
+  const s=Math.ceil(S.left/1000);
+  return `<main class="game" style="${tv(S.team)}" data-z="${zone(s)}">${hdr()}<div class="who2">${dot()}Actúa: <b>${actor()}</b> · ${pc()}</div><div id="clock" class="clock">${fmt(s)}</div><div class="bar"><i id="bar" style="width:${S.left/(S.time*10)}%"></i></div>
+  <div id="cardbox" class="cb flip">${cardIn()}</div>${nopass()}
+  <div class="acts"><button class="btn go" data-a="ok">✅ LA ADIVINARON</button>${pbtn()}</div></main>`;
+}
+function vOver(){
+  return `<main class="game" style="${tv(S.team)}" data-z="r">${hdr()}<div class="who2">${dot()}Actúa: <b>${actor()}</b></div><h1 class="tup">⏰ ¡TIEMPO TERMINADO!</h1><div class="clock sm">00:00</div>
+  <div id="cardbox" class="cb">${cardIn()}</div><p class="hint" style="margin:0">¿Llegaron a adivinarla? Decidan ustedes.</p>
+  <div class="acts col"><button class="btn go big" data-a="ok">✅ SÍ, LA ADIVINARON</button><button class="btn bad big" data-a="no">❌ NO LA ADIVINARON</button></div></main>`;
+}
+function vResult(){
+  const r=S.res;
+  return `<main class="game" style="${tv(r.team)}">${hdr()}${r.type==='ok'
+    ?`<section class="res ok"><div class="e">🎉</div><h1>¡PUNTO PARA ${NM(r.team)}!</h1><p class="plus">+1</p></section>`
+    :`<section class="res"><div class="e">❌</div><h1>SIN PUNTO</h1><p>${esc(nm(r.team))}: +0 puntos</p></section>`}
+  <p class="hint" style="margin:0 0 12px">🔄 Sigue: ${esc(nm(S.team))}…</p></main>`;
+}
+function vWin(){
+  const w=S.winner,R=ranking(),b=R[0],g=G();
+  return `<main class="game win" style="${tv(w)}">${snd()}<div class="e">🏆</div><h1>¡GANÓ ${NM(w)}!</h1><div class="e" style="animation:none">${dot()}</div><p class="pts">${S.score[w]} puntos</p><div class="chips">${S.p[w].map(n=>`<span class="chip s">${esc(n)}</span>`).join('')}</div>${board()}
+  <section class="mvp" style="${tv(b.tm)}"><p>🏆 MEJOR ACTOR</p><h2>${esc(b.n)}</h2><p>🎬 ${plur(b.o,g.unit+' adivinada',g.units+' adivinadas')}</p></section>
+  <ol class="rank">${R.slice(0,10).map((x,i)=>`<li style="${tv(x.tm)}"><span class="md">${KEYS[i]}</span><span class="rn"><b>${esc(x.n)}</b><small>${x.a}</small></span><span class="rs">${plur(x.o,'acierto','aciertos')}</span></li>`).join('')}</ol>
+  <div class="row" style="width:100%;margin-top:auto"><button class="btn gold big" data-a="again">🔄 JUGAR DE NUEVO</button><button class="btn no big" data-a="home">🏠 VOLVER AL INICIO</button></div></main>`;
+}
+function paintBg(act){
+  const n=S.n,seg=TL().map(i=>`color-mix(in srgb,${S.tm[i].col} ${act<0?15:i===act?38:6}%,transparent) ${i*100/n}% ${(i+1)*100/n}%`).join(',');
+  document.body.style.backgroundImage=`linear-gradient(90deg,${seg})`;
+}
+function render(keep){
+  const ph=S.phase;
+  paintBg(ph==='win'?S.winner:ph==='result'?S.res.team:['intro','pick','play','over'].includes(ph)?S.team:-1);
+  app.innerHTML=({menu:vMenu,about:vAbout,setup:vSetup,confirm:vConfirm,intro:vIntro,pick:vPick,play:vPlay,over:vOver,result:vResult,win:vWin})[ph]();
+  if(!keep)window.scrollTo(0,0);
+}
+const to=ph=>{S.phase=ph;save();render()};
+
+/* ---------- lógica de turnos ---------- */
+function setupTurn(){
+  clearTimeout(rt);
+  S.ai=nextActor(S.team);S.card=null;S.passes=MAXP;S.show=false;S.left=S.time*1000;
+  S.phase='intro';save();render();
+}
+function pick(){
+  if(S.phase!=='intro')return;
+  S.card=draw();to('pick');
+}
+function startTurn(){
+  if(S.phase!=='pick')return;
+  S.show=false;S.left=S.time*1000;S.endAt=Date.now()+S.left;S.phase='play';lastSec=-1;
+  render();stopT();iv=setInterval(tick,100);sfx.start();save();
+}
+function tick(){
+  if(S.phase!=='play')return stopT();
+  const left=S.endAt-Date.now();
+  if(left<=0)return timeUp();
+  S.left=left;const s=Math.ceil(left/1000);
+  $('#clock').textContent=fmt(s);
+  $('#bar').style.width=(left/(S.time*10))+'%';
+  $('.game').dataset.z=zone(s);
+  if(s!==lastSec){lastSec=s;save();if(s<=10)sfx.tick(s)}
+}
+function timeUp(){
+  if(S.phase!=='play')return;
+  stopT();S.left=0;S.show=false;S.phase='over';save();render();sfx.end();
+  try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}
+}
+function award(yes){
+  if(S.phase!=='play'&&S.phase!=='over')return;
+  stopT();
+  const t=S.team,st=stat(t,S.ai);st.u++;
+  if(yes){S.score[t]++;st.o++}else st.f++;
+  if(yes&&S.score[t]>=S.target){S.phase='win';S.winner=t;S.card=null;save();render();sfx.win();confetti();return}
+  S.res={type:yes?'ok':'no',team:t};S.team=(t+1)%S.n;S.card=null;
+  S.phase='result';save();render();
+  yes?sfx.ok():sfx.pass();
+  rt=setTimeout(()=>{if(S.phase==='result')setupTurn()},yes?1900:2600);
+}
+function pass(){
+  if((S.phase!=='pick'&&S.phase!=='play')||S.passes<1)return;
+  if(S.phase==='play'){S.left=S.endAt-Date.now();if(S.left<=0)return timeUp()}
+  S.passes--;stat(S.team,S.ai).p++;S.card=draw();S.show=false;save();render(1);sfx.pass();
+}
+function rev(){
+  if(S.phase!=='play'&&S.phase!=='over')return;
+  S.show=!S.show;save();$('#cardbox').innerHTML=cardIn();
+}
+function reset(){
+  clearTimeout(rt);stopT();$('.cf')?.remove();
+  S.score=[0,0,0,0];S.team=0;S.winner=null;S.res=null;S.card=null;S.bag=[[],[],[],[]];S.lastA=[-1,-1,-1,-1];S.st={};S.passes=MAXP;S.show=false;
+}
+function add(t){
+  const el=$('#in-'+t),v=el.value.trim();
+  if(!v)return el.focus();
+  S.p[t].push(v);S.draft[t]='';save();render(1);$('#in-'+t).focus();
+}
+function setCol(i,c,panel){
+  S.tm[i].col=c;
+  if(panel){panel.style.setProperty('--tc',c);panel.style.setProperty('--tx',ink(c))}
+  paintBg(-1);save();
+}
+
+/* ---------- confeti ---------- */
+function confetti(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  $('.cf')?.remove();
+  const c=document.createElement('canvas');c.className='cf';document.body.appendChild(c);
+  const x=c.getContext('2d'),W=c.width=innerWidth,H=c.height=innerHeight,cols=['#ef3b4d','#2d7dff','#ffc233','#ffffff','#3ddc84'];
+  const P=Array.from({length:140},()=>({x:Math.random()*W,y:-20-Math.random()*H*.6,w:6+Math.random()*8,h:10+Math.random()*10,vx:-2+Math.random()*4,vy:2+Math.random()*4,r:Math.random()*6,vr:-.2+Math.random()*.4,c:cols[Math.random()*5|0]}));
+  const t0=performance.now();
+  (function f(t){
+    x.clearRect(0,0,W,H);
+    P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.w/2,-p.h/2,p.w,p.h);x.restore()});
+    if(t-t0<5000&&S.phase==='win')requestAnimationFrame(f);else c.remove();
+  })(t0);
+}
+
+
+
+/* ---------- PWA: instalación y actualizaciones ---------- */
+const VER=self.APP_VERSION||'';
+let deferred=null,installed=false,help=false,waiting=null,updating=false;
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const isIOS=()=>/iPad|iPhone|iPod/.test(navigator.userAgent);
+function pwaHtml(lbl){
+  let h='';
+  if(waiting)h+='<button class="btn go big" data-a="update">🔄 NUEVA VERSIÓN — ACTUALIZAR</button>';
+  if(standalone())return h;                       // ya está dentro de la app instalada
+  if(installed)return h+'<p class="okk">✅ APP INSTALADA</p>';
+  h+=`<button class="btn inst big" data-a="install">${lbl||'📱 INSTALAR APP'}</button>`;
+  if(help)h+=`<div class="how"><b>Para instalarla:</b>${isIOS()?'<ol><li>Tocá Compartir ⬆️</li><li>Elegí "Agregar a pantalla de inicio"</li></ol>':'<ol><li>Abrí el menú ⋮ del navegador</li><li>Elegí "Instalar aplicación" o "Agregar a pantalla de inicio"</li></ol>'}</div>`;
+  return h;
+}
+const pwaRefresh=()=>document.querySelectorAll('.pwa').forEach(e=>e.innerHTML=pwaHtml(e.dataset.l));
+async function doInstall(){
+  if(deferred){                                   // el navegador permite instalar directo
+    const d=deferred;deferred=null;d.prompt();
+    try{if((await d.userChoice).outcome==='accepted')installed=true}catch(e){}
+    return pwaRefresh();
+  }
+  help=!help;pwaRefresh();                        // si no, mostramos los pasos manuales
+}
+function applyUpdate(){if(waiting){updating=true;waiting.postMessage('SKIP_WAITING')}}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;help=false;pwaRefresh()});
+addEventListener('appinstalled',()=>{installed=true;deferred=null;pwaRefresh()});
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(updating)location.reload()});
+  addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{
+    const found=w=>{if(w&&navigator.serviceWorker.controller){waiting=w;if(S.phase==='menu')applyUpdate();else pwaRefresh()}};
+    found(r.waiting);
+    r.addEventListener('updatefound',()=>{const n=r.installing;if(n)n.addEventListener('statechange',()=>{if(n.state==='installed')found(n)})});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)r.update().catch(()=>{})});
+  }).catch(()=>{}));
+}
+
+/* ---------- eventos ---------- */
+const A={
+  game:t=>{if(S.game!==t){S.game=t;S.deck=[]}to('setup')},
+  menu:()=>to('menu'),about:()=>to('about'),install:()=>doInstall(),update:()=>applyUpdate(),
+  n:(t,b)=>{S.n=+b.dataset.v;save();render(1)},
+  sw:(t,b)=>{setCol(+t,b.dataset.v);render(1)},
+  add:t=>add(+t),
+  del:(t,b)=>{S.p[t].splice(+b.dataset.i,1);save();render(1)},
+  time:(t,b)=>{S.time=+b.dataset.v;save();render(1)},
+  pts:(t,b)=>{S.target=Math.min(50,Math.max(3,S.target+ +b.dataset.v));save();render(1)},
+  confirm:()=>{TL().forEach(i=>{S.tm[i].nm=nm(i)});to('confirm')},
+  edit:()=>to('setup'),
+  start:()=>{reset();setupTurn()},
+  again:()=>{reset();setupTurn()},
+  home:()=>{reset();to('menu')},
+  pick,go:startTurn,ok:()=>award(true),no:()=>award(false),pass,rev,
+  snd:()=>{S.sound=!S.sound;save();document.querySelectorAll('.sndb').forEach(x=>x.textContent=sndTxt());beep(660,.1)}
+};
+app.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');
+  if(b&&!b.disabled&&A[b.dataset.a])A[b.dataset.a](b.dataset.t,b);
+});
+app.addEventListener('input',e=>{
+  const d=e.target.dataset;
+  if(d.nm!=null){S.tm[+d.nm].nm=e.target.value;save()}
+  else if(d.col!=null)setCol(+d.col,e.target.value,e.target.closest('.panel'));
+  else if(d.t!=null&&e.target.tagName==='INPUT'){S.draft[+d.t]=e.target.value;save()}
+});
+app.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.tagName==='INPUT'&&e.target.dataset.t!=null)add(+e.target.dataset.t);
+});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.phase==='play')tick()});
+
+/* ---------- arranque y recuperación ---------- */
+try{
+  const d=JSON.parse(localStorage.getItem(K));
+  if(d&&d.tm)Object.assign(S,d);
+  else{
+    const o=JSON.parse(localStorage.getItem('jdp_v1'));
+    if(o&&o.p&&o.p.red){S.p[0]=o.p.red;S.p[1]=o.p.blue;S.time=o.time||60;S.target=o.target||20;S.sound=o.sound!==false}
+  }
+}catch(e){}
+if(!PH.includes(S.phase))S.phase='menu';
+if(!GAMES.some(g=>g.id===S.game&&g.on))S.game='peliculas';
+S.n=Math.min(4,Math.max(2,S.n|0));
+if(!['menu','setup','about'].includes(S.phase)&&!TL().every(i=>S.p[i].length))S.phase='setup';
+if((S.phase==='pick'||S.phase==='play'||S.phase==='over')&&S.card==null)S.phase='intro';
+if(S.phase==='win'&&S.winner==null)S.phase='menu';
+if(S.p[S.team]&&S.p[S.team][S.ai]===undefined)S.ai=0;
+if(S.phase==='play'&&S.endAt<=Date.now()){S.phase='over';S.left=0;S.show=false;save()}
+if(S.phase==='result'&&S.res)setupTurn();
+else{
+  if(S.phase==='result')S.phase='menu';
+  render();
+  if(S.phase==='play')iv=setInterval(tick,100);
+  if(S.phase==='win')confetti();
+}
+
+</script>
+</body>
+</html>
